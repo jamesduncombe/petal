@@ -1,5 +1,7 @@
 # Petal 🌺
 
+![tests](https://github.com/jamesduncombe/petal/workflows/tests/badge.svg)
+
 Petal is a [Bloom filter](https://en.wikipedia.org/wiki/Bloom_filter) in Elixir.
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc).
