@@ -12,6 +12,9 @@ defmodule Petal.Worker do
   require Logger
 
   @bit_size_of_field 64
+  @byte_size_of_field div(@bit_size_of_field, 8)
+
+  @hashers Application.fetch_env!(:petal, :hashers)
 
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -47,47 +50,51 @@ defmodule Petal.Worker do
 
   def init(_args) do
     # Init the bitfield
-    size_of_field = floor(@bit_size_of_field / 8)
-    bitfield = for _n <- 1..size_of_field, into: <<>>, do: <<0>>
+    size_of_field = @byte_size_of_field
+    bitfield = generate_n_bytes(size_of_field)
 
     {:ok, bitfield}
   end
 
   def handle_call({:add, item}, _from, bitfield) do
-    pos = hash(item)
-    byte_n = Integer.floor_div(pos, 8)
+    # For each of the hash implementations build a
+    new_bitfield =
+      for hasher <- @hashers, reduce: bitfield do
+        acc ->
+          pos =
+            hasher.hash(item)
+            |> rem(@bit_size_of_field)
 
-    Logger.debug("Position in bitfield is: #{pos}")
-    Logger.debug("Lives in byte: #{byte_n}")
+          # New bitfield with bit set in place
+          n_bitfield = 1 <<< (@bit_size_of_field - pos - 1)
 
-    # New bitfield with bit set in place
-    n_bitfield = 1 <<< (64 - pos)
+          # OR the fields together
+          # Encode it back to binary
+          encoded =
+            :binary.decode_unsigned(acc)
+            |> bor(n_bitfield)
+            |> :binary.encode_unsigned()
 
-    # OR the fields together
-    bitfield = :binary.decode_unsigned(bitfield) ||| n_bitfield
-
-    # Encode and pad it back to size
-    encoded = :binary.encode_unsigned(bitfield)
-    pad_length = 8 - floor(bit_size(encoded) / 8)
-    padder = for _n <- 1..pad_length, into: <<>>, do: <<0>>
-    new_bitfield = padder <> encoded
+          # Encode and pad it back to size
+          pad_length = @byte_size_of_field - byte_size(encoded)
+          pad_encoded_payload(pad_length, encoded)
+      end
 
     # Push out bitfield back into the state
     {:reply, :ok, new_bitfield}
   end
 
   def handle_call({:check, item}, _from, bitfield) do
-    offset_before_bit = hash(item) - 1
+    ret =
+      for hasher <- @hashers, into: [] do
+        hasher.hash(item)
+        |> rem(@bit_size_of_field)
+        |> exists?(bitfield)
+      end
+      |> Enum.all?()
+      |> format_return()
 
-    case bitfield do
-      <<_head::bitstring-size(offset_before_bit), 1::1, _rest::bitstring>> ->
-        Logger.debug("Found")
-        {:reply, :ok, bitfield}
-
-      _ ->
-        Logger.debug("Not found")
-        {:reply, {:error, "Not found"}, bitfield}
-    end
+    {:reply, ret, bitfield}
   end
 
   def handle_call(:inspect, _from, bitfield) do
@@ -100,12 +107,32 @@ defmodule Petal.Worker do
 
   # Helpers
 
-  # Hashes the payload
-  @spec hash(payload :: binary()) :: pos_integer()
-  defp hash(payload) do
-    payload
-    |> :erlang.adler32()
-    |> rem(@bit_size_of_field)
+  # Pad the encoded payload
+  defp pad_encoded_payload(0, encoded), do: encoded
+
+  defp pad_encoded_payload(n, encoded) do
+    padder = generate_n_bytes(n)
+    padder <> encoded
+  end
+
+  defp generate_n_bytes(n) do
+    for _n <- 1..n, into: <<>>, do: <<0>>
+  end
+
+  # Simply map from true|false to a decent return term
+  defp format_return(true), do: :ok
+  defp format_return(_false), do: {:error, "Not found"}
+
+  # Check for the existance of the set bit from `offset` in `bitfield`
+  @spec exists?(offset :: pos_integer(), bitfield :: binary()) :: true | false
+  defp exists?(offset, bitfield) do
+    case bitfield do
+      <<_head::bitstring-size(offset), 1::1, _rest::bitstring>> ->
+        true
+
+      _ ->
+        false
+    end
   end
 
   # Pretty prints a the filter
