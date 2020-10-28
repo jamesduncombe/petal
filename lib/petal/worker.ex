@@ -11,6 +11,8 @@ defmodule Petal.Worker do
 
   require Logger
 
+  import Petal.Bytes
+
   alias Petal.Bitfield
 
   @hashers Application.fetch_env!(:petal, :hashers)
@@ -50,13 +52,7 @@ defmodule Petal.Worker do
   def init(args) do
     # Init the bitfield
     size_of_field = Keyword.get(args, :size, 64)
-
-    bitfield =
-      size_of_field
-      |> byte_size_of_field()
-      |> generate_n_bytes()
-
-    state = %Bitfield{bitfield: bitfield, size: size_of_field}
+    state = Bitfield.new(size_of_field)
 
     {:ok, state}
   end
@@ -110,33 +106,7 @@ defmodule Petal.Worker do
 
   # Helpers
 
-  defp byte_size_of_field(size), do: div(size, 8)
-
-  # Pad the encoded payload
-  defp pad_encoded_payload(0, encoded), do: encoded
-
-  defp pad_encoded_payload(n, encoded) do
-    padder = generate_n_bytes(n)
-    padder <> encoded
-  end
-
-  defp generate_n_bytes(n) do
-    for _n <- 1..n, into: <<>>, do: <<0>>
-  end
-
   # Simply map from true|false to a decent return term
   defp format_return(true), do: :ok
   defp format_return(_false), do: {:error, "Not found"}
-
-  # Check for the existance of the set bit from `offset` in `bitfield`
-  @spec exists?(offset :: pos_integer(), bitfield :: binary()) :: true | false
-  defp exists?(offset, bitfield) do
-    case bitfield do
-      <<_head::bitstring-size(offset), 1::1, _rest::bitstring>> ->
-        true
-
-      _ ->
-        false
-    end
-  end
 end
