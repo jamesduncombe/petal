@@ -12,4 +12,4 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 - Add further tests
 - ~~Add configurable bitfield length~~
 - Potentially add a network interface to it
-- Add Dialyxir
+- ~~Add Dialyxir~~
