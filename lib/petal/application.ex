@@ -8,7 +8,7 @@ defmodule Petal.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      Petal.Worker
+      {Petal.Worker, size: 64}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

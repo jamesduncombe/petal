@@ -11,8 +11,7 @@ defmodule Petal.Worker do
 
   require Logger
 
-  @bit_size_of_field 64
-  @byte_size_of_field div(@bit_size_of_field, 8)
+  alias Petal.Bitfield
 
   @hashers Application.fetch_env!(:petal, :hashers)
 
@@ -48,25 +47,31 @@ defmodule Petal.Worker do
 
   # Server
 
-  def init(_args) do
+  def init(args) do
     # Init the bitfield
-    size_of_field = @byte_size_of_field
-    bitfield = generate_n_bytes(size_of_field)
+    size_of_field = Keyword.get(args, :size, 64)
 
-    {:ok, bitfield}
+    bitfield =
+      size_of_field
+      |> byte_size_of_field()
+      |> generate_n_bytes()
+
+    state = %Bitfield{bitfield: bitfield, size: size_of_field}
+
+    {:ok, state}
   end
 
-  def handle_call({:add, item}, _from, bitfield) do
+  def handle_call({:add, item}, _from, state) do
     # For each of the hash implementations build a
     new_bitfield =
-      for hasher <- @hashers, reduce: bitfield do
+      for hasher <- @hashers, reduce: state.bitfield do
         acc ->
           pos =
             hasher.hash(item)
-            |> rem(@bit_size_of_field)
+            |> rem(state.size)
 
           # New bitfield with bit set in place
-          n_bitfield = 1 <<< (@bit_size_of_field - pos - 1)
+          n_bitfield = 1 <<< (state.size - pos - 1)
 
           # OR the fields together
           # Encode it back to binary
@@ -76,20 +81,19 @@ defmodule Petal.Worker do
             |> :binary.encode_unsigned()
 
           # Encode and pad it back to size
-          pad_length = @byte_size_of_field - byte_size(encoded)
+          pad_length = byte_size(state.bitfield) - byte_size(encoded)
           pad_encoded_payload(pad_length, encoded)
       end
 
-    # Push out bitfield back into the state
-    {:reply, :ok, new_bitfield}
+    {:reply, :ok, %{state | bitfield: new_bitfield}}
   end
 
   def handle_call({:check, item}, _from, bitfield) do
     ret =
       for hasher <- @hashers, into: [] do
         hasher.hash(item)
-        |> rem(@bit_size_of_field)
-        |> exists?(bitfield)
+        |> rem(bitfield.size)
+        |> exists?(bitfield.bitfield)
       end
       |> Enum.all?()
       |> format_return()
@@ -99,13 +103,14 @@ defmodule Petal.Worker do
 
   def handle_call(:inspect, _from, bitfield) do
     bitfield
-    |> pretty_print()
     |> IO.puts()
 
     {:reply, :ok, bitfield}
   end
 
   # Helpers
+
+  defp byte_size_of_field(size), do: div(size, 8)
 
   # Pad the encoded payload
   defp pad_encoded_payload(0, encoded), do: encoded
@@ -134,25 +139,4 @@ defmodule Petal.Worker do
         false
     end
   end
-
-  # Pretty prints a the filter
-  @spec pretty_print(bitfield :: bitstring()) :: String.t()
-  defp pretty_print(bitfield) when is_bitstring(bitfield) do
-    do_pretty_print(bitfield)
-  end
-
-  defp do_pretty_print(bitfield, accm \\ [])
-
-  defp do_pretty_print(<<bit::1>> = _bitfield, accm) do
-    [bit_set(bit) | accm]
-    |> Enum.reverse()
-    |> Enum.join()
-  end
-
-  defp do_pretty_print(<<bit::1, rest::bitstring>> = _bitfield, accm) do
-    do_pretty_print(rest, [bit_set(bit) | accm])
-  end
-
-  defp bit_set(1), do: "1"
-  defp bit_set(_not_set), do: "0"
 end

@@ -10,6 +10,6 @@ Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_do
 
 - ~~Abstract out the hashes so that additional hashes can be used~~
 - Add further tests
-- Add configurable bitfield length
+- ~~Add configurable bitfield length~~
 - Potentially add a network interface to it
 - Add Dialyxir
