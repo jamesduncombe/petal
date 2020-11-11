@@ -1,5 +1,6 @@
 defmodule Petal.BytesTest do
   use ExUnit.Case
+  doctest Petal.Bytes
 
   alias Petal.Bytes
 
