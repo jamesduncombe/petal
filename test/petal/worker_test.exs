@@ -1,16 +1,15 @@
-defmodule PetalTest do
+defmodule Petal.WorkerTest do
   use ExUnit.Case
 
   alias Petal.Worker
 
   test "add/1" do
-    assert :ok == Worker.add("james")
+    assert Worker.add("james") == :ok
   end
 
   test "check/1" do
     Worker.add("james")
-    assert :ok == Worker.check("james")
-
-    assert {:error, "Not found"} == Worker.check("jame")
+    assert Worker.check("james") == :ok
+    assert Worker.check("jame") == {:error, "Not found"}
   end
 end

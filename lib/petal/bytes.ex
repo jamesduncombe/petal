@@ -9,8 +9,14 @@ defmodule Petal.Bytes do
   @spec byte_size_of_field(size :: pos_integer()) :: pos_integer()
   def byte_size_of_field(size), do: div(size, 8)
 
-  @doc """
+  @doc ~S"""
   Pad the `encoded` payload to `n` bytes.
+
+  ## Examples
+
+      iex> Petal.Bytes.pad_encoded_payload(1, <<1>>)
+      <<0, 1>>
+
   """
   @spec pad_encoded_payload(n :: pos_integer(), encoded :: binary()) :: binary()
   def pad_encoded_payload(0, encoded), do: encoded
@@ -28,8 +34,14 @@ defmodule Petal.Bytes do
     for _n <- 1..n, into: <<>>, do: <<0>>
   end
 
-  @doc """
+  @doc ~S"""
   Check for the existance of the set bit from `offset` in `bitfield`.
+
+  ## Examples
+
+      iex> Petal.Bytes.exists?(23, <<0,0,1,0>>)
+      true
+
   """
   @spec exists?(offset :: pos_integer(), bitfield :: binary()) :: true | false
   def exists?(offset, bitfield) do
