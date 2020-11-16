@@ -98,10 +98,7 @@ defmodule Petal.Worker do
   end
 
   def handle_call(:inspect, _from, bitfield) do
-    bitfield
-    |> IO.puts()
-
-    {:reply, :ok, bitfield}
+    {:reply, {:ok, bitfield}, bitfield}
   end
 
   # Helpers
