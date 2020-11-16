@@ -1,26 +1,18 @@
 defmodule Petal.MixProject do
   use Mix.Project
 
+  @version "0.1.0"
+
   def project do
     [
       app: :petal,
-      version: "0.1.0",
+      version: @version,
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package(),
-      docs: [
-        groups_for_modules: [
-          Behaviours: [
-            Petal.Hasher
-          ],
-          "Hash Functions": [
-            Petal.Hasher.CRC32,
-            Petal.Hasher.Adler32
-          ]
-        ]
-      ]
+      docs: docs()
     ]
   end
 
@@ -37,6 +29,25 @@ defmodule Petal.MixProject do
     [
       {:ex_doc, "~> 0.22", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp docs() do
+    [
+      name: "Petal",
+      source_ref: "v#{@version}",
+      main: "README",
+      extras: ["README.md"],
+      source_url: "https://github.com/jamesduncombe/petal",
+      groups_for_modules: [
+        Behaviours: [
+          Petal.Hasher
+        ],
+        "Hash Functions": [
+          Petal.Hasher.CRC32,
+          Petal.Hasher.Adler32
+        ]
+      ]
     ]
   end
 
