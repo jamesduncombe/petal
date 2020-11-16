@@ -7,7 +7,20 @@ defmodule Petal.MixProject do
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      description: description(),
+      package: package(),
+      docs: [
+        groups_for_modules: [
+          Behaviours: [
+            Petal.Hasher
+          ],
+          "Hash Functions": [
+            Petal.Hasher.CRC32,
+            Petal.Hasher.Adler32
+          ]
+        ]
+      ]
     ]
   end
 
@@ -24,6 +37,18 @@ defmodule Petal.MixProject do
     [
       {:ex_doc, "~> 0.22", only: :dev, runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+    ]
+  end
+
+  defp description() do
+    "Petal is a Bloom filter"
+  end
+
+  defp package() do
+    [
+      maintainers: ["James Duncombe"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/jamesduncombe/petal"}
     ]
   end
 end
