@@ -11,7 +11,7 @@ You can use Petal by adding it to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:petal, "~> 0.2.0"}
+    {:petal, "~> 0.2.1"}
   ]
 end
 ```

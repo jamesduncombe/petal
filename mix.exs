@@ -1,7 +1,7 @@
 defmodule Petal.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.2.1"
 
   def project do
     [
@@ -36,7 +36,7 @@ defmodule Petal.MixProject do
     [
       name: "Petal",
       source_ref: "v#{@version}",
-      main: "README",
+      main: "readme",
       extras: ["README.md"],
       source_url: "https://github.com/jamesduncombe/petal",
       groups_for_modules: [
