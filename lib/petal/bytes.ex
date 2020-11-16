@@ -9,6 +9,12 @@ defmodule Petal.Bytes do
   @spec byte_size_of_field(size :: pos_integer()) :: pos_integer()
   def byte_size_of_field(size), do: div(size, 8)
 
+  @doc """
+  Round up the bits so that they are divisible by 8.
+  """
+  @spec ceil_bits(size :: pos_integer()) :: pos_integer()
+  def ceil_bits(size), do: ceil(size / 8) * 8
+
   @doc ~S"""
   Pad the `encoded` payload to `n` bytes.
 

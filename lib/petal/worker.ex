@@ -51,7 +51,7 @@ defmodule Petal.Worker do
 
   def init(args) do
     # Init the bitfield
-    size_of_field = Keyword.get(args, :size, 64)
+    size_of_field = Keyword.get(args, :size, _bits = 64)
     state = Bitfield.new(size_of_field)
 
     {:ok, state}

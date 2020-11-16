@@ -8,6 +8,10 @@ defmodule Petal.BytesTest do
     assert Bytes.byte_size_of_field(64) == 8
   end
 
+  test "ceil_bits/1" do
+    assert Bytes.ceil_bits(100) == 104
+  end
+
   test "pad_encoded_payload/2" do
     payload = <<1, 2, 3>>
 
